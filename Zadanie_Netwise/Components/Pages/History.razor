@@ -1,0 +1,95 @@
+﻿@page "/historia"
+@rendermode InteractiveServer
+@inject FactStorageService FactStorage
+
+<PageTitle>Historia Ciekawostek</PageTitle>
+
+<div class="header-container">
+    <h3>Zapisane ciekawostki</h3>
+    @if (zapisaneFakty != null && zapisaneFakty.Count > 0)
+    {
+        <button class="btn-danger" @onclick="ShowConfirmModal">Usuń historię</button>
+    }
+</div>
+
+@if (zapisaneFakty == null)
+{
+    <p><em>Ładowanie...</em></p>
+}
+else if (zapisaneFakty.Count == 0)
+{
+    <p>Brak zapisanych ciekawostek. Wygeneruj coś na stronie głównej!</p>
+}
+else
+{
+    <ul class="fact-list">
+        @foreach (var fakt in zapisaneFakty)
+        {
+            <li>@fakt</li>
+        }
+    </ul>
+}
+
+
+@if (isConfirmModalVisible)
+{
+    <div class="modal-backdrop">
+        <div class="modal-content">
+            <h4>Potwierdzenie</h4>
+            <p>Czy na pewno chcesz usunąć całą historię ciekawostek?</p>
+            <div class="modal-actions">
+                <button class="btn-cancel" @onclick="CloseConfirmModal">Anuluj</button>
+                <button class="btn-danger" @onclick="ExecuteDelete">Tak, usuń</button>
+            </div>
+        </div>
+    </div>
+}
+
+
+@if (isSuccessModalVisible)
+{
+    <div class="modal-backdrop">
+        <div class="modal-content">
+            <h4>Sukces!</h4>
+            <p>Usunięto pomyślnie.</p>
+            <div class="modal-actions center">
+                <button class="btn-primary" @onclick="CloseSuccessModal">Zamknij</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<string> zapisaneFakty;
+    private bool isConfirmModalVisible = false;
+    private bool isSuccessModalVisible = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        zapisaneFakty = await FactStorage.GetAllFactsAsync();
+    }
+
+    private void ShowConfirmModal()
+    {
+        isConfirmModalVisible = true;
+    }
+
+    private void CloseConfirmModal()
+    {
+        isConfirmModalVisible = false;
+    }
+
+    private async Task ExecuteDelete()
+    {
+        await FactStorage.ClearAllFactsAsync();
+        zapisaneFakty?.Clear();
+
+        isConfirmModalVisible = false;
+        isSuccessModalVisible = true;
+    }
+
+    private void CloseSuccessModal()
+    {
+        isSuccessModalVisible = false;
+    }
+}

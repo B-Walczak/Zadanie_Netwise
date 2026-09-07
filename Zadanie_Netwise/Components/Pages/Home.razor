@@ -1,0 +1,62 @@
+﻿@page "/"
+@rendermode InteractiveServer
+@inject HttpClient Http
+@inject FactStorageService FactStorage
+
+
+<PageTitle>Generator Ciekawostek</PageTitle>
+
+<h3>Nowa ciekawostka</h3>
+<div class="fact-card">
+    @CurrentFact
+</div>
+
+<button @onclick="DownloadAndSaveFact">
+    Pobierz i zapisz ciekawostke
+</button>
+
+@if (!string.IsNullOrEmpty(PreviousFact))
+{
+    <h3>Ostatnio pobrana ciekawostka</h3>
+    <div class="fact-card previous">
+        @PreviousFact
+    </div>
+}
+
+
+@code {
+    private string CurrentFact = "Kliknij przycisk, aby pobrać pierwszą ciekawostkę!";
+    private string PreviousFact = "";
+
+    private async Task DownloadAndSaveFact()
+    {
+        if (CurrentFact != "Kliknij przycisk, aby pobrać pierwszą ciekawostkę!" && CurrentFact != "Pobieranie..." && !CurrentFact.StartsWith("Błąd"))
+        {
+            PreviousFact = CurrentFact;
+        }
+
+        CurrentFact = "Pobieranie...";
+
+        try
+        {
+            var response = await Http.GetFromJsonAsync<CatFactResponse>("https://catfact.ninja/fact");
+
+            if (response != null)
+            {
+                CurrentFact = response.Fact;
+                await FactStorage.SaveFactAsync(response.Fact);
+            }
+        }
+        catch (Exception ex)
+        {
+            CurrentFact = $"Błąd podczas pobierania danych: {ex.Message}";
+        }
+    }
+
+
+    public class CatFactResponse
+    {
+        public string Fact { get; set; }
+        public int Length { get; set; }
+    }
+}
